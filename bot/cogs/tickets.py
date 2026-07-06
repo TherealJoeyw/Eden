@@ -5,7 +5,7 @@ from discord.ext import commands
 
 class CloseTicketButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Close Ticket", style=discord.ButtonStyle.danger)
+        super().__init__(label="Close Ticket", style=discord.ButtonStyle.danger, custom_id="close_ticket_button")
 
     async def callback(self, interaction: discord.Interaction) -> None:
         channel = interaction.channel
@@ -25,7 +25,7 @@ class CloseTicketView(discord.ui.View):
 
 class OpenTicketButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Open Verification Ticket", style=discord.ButtonStyle.primary)
+        super().__init__(label="Open Verification Ticket", style=discord.ButtonStyle.primary, custom_id="open_ticket_button")
 
     async def callback(self, interaction: discord.Interaction) -> None:
         guild = interaction.guild
