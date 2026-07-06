@@ -3,7 +3,8 @@ services:
     image: python:3.11-slim
     command: >
       sh -c "apt-get update -qq &&
-             apt-get install -y -qq --no-install-recommends postgresql-client &&
+             apt-get install -y -qq --no-install-recommends git postgresql-client &&
+             cd /app && git pull origin main &&
              pip install -q -r /app/requirements.txt &&
              python /app/bot/main.py"
     depends_on:
