@@ -1,0 +1,21 @@
+services:
+  bot:
+    build: .
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: eden
+      POSTGRES_USER: eden
+      POSTGRES_PASSWORD: eden
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
