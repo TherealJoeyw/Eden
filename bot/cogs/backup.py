@@ -101,18 +101,16 @@ class DatabaseBackup(commands.Cog):
     async def backup(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True, thinking=True)
         success, dump_path = await self.create_backup()
-        if success and dump_path is not None:
-            await interaction.followup.send(
-                f"Backup completed successfully: `{dump_path}`",
-                ephemeral=True,
-            )
-            return
 
-        path_text = str(dump_path) if dump_path is not None else "not created"
-        await interaction.followup.send(
-            f"Backup failed. Backup path: `{path_text}`",
-            ephemeral=True,
-        )
+        embed = discord.Embed(color=discord.Color.green() if success else discord.Color.red())
+        if success and dump_path is not None:
+            embed.title = "✅ backup complete"
+            embed.description = f"saved to `{dump_path.name}`"
+        else:
+            embed.title = "❌ backup failed"
+            embed.description = f"path: `{dump_path}`" if dump_path else "backup was not created"
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="restore", description="Restore the database from a backup.")
     @app_commands.describe(filename="Backup filename to restore (leave blank to use the latest).")
@@ -122,7 +120,10 @@ class DatabaseBackup(commands.Cog):
 
         backups = self._list_backups()
         if not backups:
-            await interaction.followup.send("No backups found.", ephemeral=True)
+            await interaction.followup.send(
+                embed=discord.Embed(title="📭 no backups found", color=discord.Color.orange()),
+                ephemeral=True,
+            )
             return
 
         if filename is None:
@@ -131,37 +132,37 @@ class DatabaseBackup(commands.Cog):
             dump_path = backups[0].parent / filename
             if dump_path not in backups:
                 listing = "\n".join(f"`{p.name}`" for p in backups)
-                await interaction.followup.send(
-                    f"Backup `{filename}` not found. Available backups:\n{listing}",
-                    ephemeral=True,
+                embed = discord.Embed(
+                    title="❓ backup not found",
+                    description=f"**available backups:**\n{listing}",
+                    color=discord.Color.orange(),
                 )
+                await interaction.followup.send(embed=embed, ephemeral=True)
                 return
 
         success, error = await self.restore_backup(dump_path)
+        embed = discord.Embed(color=discord.Color.green() if success else discord.Color.red())
         if success:
-            await interaction.followup.send(
-                f"Database restored successfully from `{dump_path.name}`.",
-                ephemeral=True,
-            )
+            embed.title = "✅ restore complete"
+            embed.description = f"restored from `{dump_path.name}`"
         else:
-            await interaction.followup.send(
-                f"Restore failed: {error}",
-                ephemeral=True,
-            )
+            embed.title = "❌ restore failed"
+            embed.description = f"```{error}```"
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     @app_commands.command(name="listbackups", description="List available database backups.")
     @app_commands.default_permissions(manage_guild=True)
     async def listbackups(self, interaction: discord.Interaction) -> None:
         backups = self._list_backups()
-        if not backups:
-            await interaction.response.send_message("No backups found.", ephemeral=True)
-            return
 
-        listing = "\n".join(f"`{p.name}`" for p in backups)
-        await interaction.response.send_message(
-            f"Available backups (newest first):\n{listing}",
-            ephemeral=True,
-        )
+        embed = discord.Embed(title="🗄️ available backups", color=discord.Color.blurple())
+        if not backups:
+            embed.description = "no backups found"
+        else:
+            embed.description = "\n".join(f"`{p.name}`" for p in backups)
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @backup_task.before_loop
     async def before_backup_task(self) -> None:

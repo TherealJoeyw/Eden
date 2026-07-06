@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 
 import discord
@@ -15,16 +14,17 @@ class Diagnostics(commands.Cog):
     @app_commands.default_permissions(manage_guild=True)
     async def diagnostics(self, interaction: discord.Interaction) -> None:
         latency_ms = round(self.bot.latency * 1000, 2)
+        latency_emoji = "🟢" if latency_ms < 100 else "🟡" if latency_ms < 200 else "🔴"
 
-        db_status = "Unavailable"
+        db_status = "⚪ Unavailable"
         db_pool = getattr(self.bot, "db_pool", None)
         if db_pool is not None:
             try:
                 async with db_pool.acquire() as connection:
                     result = await connection.fetchval("SELECT 1")
-                db_status = "Connected" if result == 1 else "Unexpected response"
+                db_status = "🟢 Connected" if result == 1 else "🟡 Unexpected response"
             except Exception:
-                db_status = "Disconnected"
+                db_status = "🔴 Disconnected"
 
         command_count = sum(1 for _ in self.bot.tree.walk_commands())
         cog_count = len(self.bot.cogs)
@@ -35,14 +35,17 @@ class Diagnostics(commands.Cog):
             elapsed = discord.utils.utcnow() - started_at
             uptime = str(timedelta(seconds=int(elapsed.total_seconds())))
 
-        embed = discord.Embed(title="Diagnostics", color=discord.Color.blurple())
-        embed.add_field(name="Latency", value=f"{latency_ms} ms", inline=False)
-        embed.add_field(name="Database", value=db_status, inline=False)
-        embed.add_field(name="Loaded cogs", value=str(cog_count), inline=False)
-        embed.add_field(name="Slash commands", value=str(command_count), inline=False)
-        embed.add_field(name="Uptime", value=uptime, inline=False)
+        embed = discord.Embed(title="🌱 eden — diagnostics", color=discord.Color.green())
+        embed.add_field(name="📡 latency", value=f"{latency_emoji} {latency_ms} ms", inline=True)
+        embed.add_field(name="🗄️ database", value=db_status, inline=True)
+        embed.add_field(name="⏱️ uptime", value=f"`{uptime}`", inline=True)
+        embed.add_field(name="🧩 cogs loaded", value=str(cog_count), inline=True)
+        embed.add_field(name="⚡ commands", value=str(command_count), inline=True)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        if self.bot.user and self.bot.user.avatar:
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:

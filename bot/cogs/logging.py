@@ -58,10 +58,13 @@ class MessageLogging(commands.Cog):
                 guild.id,
                 channel.id,
             )
-        await interaction.response.send_message(
-            f"Log channel set to {channel.mention}.",
-            ephemeral=True,
+
+        embed = discord.Embed(
+            title="✅ log channel updated",
+            description=f"message logs will now be sent to {channel.mention}",
+            color=discord.Color.green(),
         )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message) -> None:
@@ -71,10 +74,11 @@ class MessageLogging(commands.Cog):
         if log_channel is None:
             return
 
-        embed = discord.Embed(title="Message Deleted", color=discord.Color.red())
-        embed.add_field(name="Author", value=message.author.mention, inline=True)
-        embed.add_field(name="Channel", value=message.channel.mention, inline=True)
-        embed.add_field(name="Content", value=message.content or "*No content*", inline=False)
+        embed = discord.Embed(title="🗑️ message deleted", color=discord.Color.red())
+        embed.add_field(name="👤 author", value=message.author.mention, inline=True)
+        embed.add_field(name="📍 channel", value=message.channel.mention, inline=True)
+        embed.add_field(name="💬 content", value=message.content or "*no content*", inline=False)
+        embed.set_footer(text=f"user id: {message.author.id}")
         await log_channel.send(embed=embed)
 
     @commands.Cog.listener()
@@ -88,11 +92,12 @@ class MessageLogging(commands.Cog):
         if log_channel is None:
             return
 
-        embed = discord.Embed(title="Message Edited", color=discord.Color.orange())
-        embed.add_field(name="Author", value=before.author.mention, inline=True)
-        embed.add_field(name="Channel", value=before.channel.mention, inline=True)
-        embed.add_field(name="Before", value=before.content or "*No content*", inline=False)
-        embed.add_field(name="After", value=after.content or "*No content*", inline=False)
+        embed = discord.Embed(title="✏️ message edited", color=discord.Color.orange())
+        embed.add_field(name="👤 author", value=before.author.mention, inline=True)
+        embed.add_field(name="📍 channel", value=before.channel.mention, inline=True)
+        embed.add_field(name="before", value=before.content or "*no content*", inline=False)
+        embed.add_field(name="after", value=after.content or "*no content*", inline=False)
+        embed.set_footer(text=f"user id: {before.author.id}")
         await log_channel.send(embed=embed)
 
 

@@ -5,7 +5,7 @@ from discord.ext import commands
 
 class CloseTicketButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Close Ticket", style=discord.ButtonStyle.danger, custom_id="close_ticket_button")
+        super().__init__(label="Close Ticket", style=discord.ButtonStyle.danger, custom_id="close_ticket_button", emoji="🔒")
 
     async def callback(self, interaction: discord.Interaction) -> None:
         channel = interaction.channel
@@ -13,7 +13,7 @@ class CloseTicketButton(discord.ui.Button):
             await interaction.response.send_message("Channel not found.", ephemeral=True)
             return
 
-        await interaction.response.send_message("Closing ticket...", ephemeral=True)
+        await interaction.response.send_message("🔒 closing ticket...", ephemeral=True)
         await channel.delete(reason=f"Ticket closed by {interaction.user}")
 
 
@@ -25,7 +25,7 @@ class CloseTicketView(discord.ui.View):
 
 class OpenTicketButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Open Verification Ticket", style=discord.ButtonStyle.primary, custom_id="open_ticket_button")
+        super().__init__(label="Open Verification Ticket", style=discord.ButtonStyle.primary, custom_id="open_ticket_button", emoji="🎫")
 
     async def callback(self, interaction: discord.Interaction) -> None:
         guild = interaction.guild
@@ -38,7 +38,7 @@ class OpenTicketButton(discord.ui.Button):
         existing = discord.utils.get(guild.text_channels, name=channel_name)
         if existing is not None:
             await interaction.response.send_message(
-                f"You already have a ticket: {existing.mention}",
+                f"🎫 you already have an open ticket: {existing.mention}",
                 ephemeral=True,
             )
             return
@@ -58,12 +58,15 @@ class OpenTicketButton(discord.ui.Button):
             overwrites=overwrites,
             reason=f"Verification ticket for {user}",
         )
-        await ticket_channel.send(
-            f"{user.mention} thanks for opening a verification ticket. Staff will assist you shortly.",
-            view=CloseTicketView(),
+
+        embed = discord.Embed(
+            title="🌱 verification ticket",
+            description=f"hey {user.mention}! thanks for opening a ticket 💚\nstaff will be with you shortly, hang tight!",
+            color=discord.Color.green(),
         )
+        await ticket_channel.send(embed=embed, view=CloseTicketView())
         await interaction.response.send_message(
-            f"Ticket created: {ticket_channel.mention}",
+            f"🎫 ticket created: {ticket_channel.mention}",
             ephemeral=True,
         )
 
@@ -81,11 +84,13 @@ class Tickets(commands.Cog):
     @app_commands.command(name="verification_panel", description="Post the verification ticket panel.")
     @app_commands.default_permissions(manage_channels=True)
     async def verification_panel(self, interaction: discord.Interaction) -> None:
-        await interaction.channel.send(
-            "Need verification help? Click below to open a private ticket.",
-            view=OpenTicketView(),
+        embed = discord.Embed(
+            title="🌱 need help getting verified?",
+            description="click the button below to open a private ticket and a staff member will assist you!",
+            color=discord.Color.green(),
         )
-        await interaction.response.send_message("Verification panel posted.", ephemeral=True)
+        await interaction.channel.send(embed=embed, view=OpenTicketView())
+        await interaction.response.send_message("✅ verification panel posted!", ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:

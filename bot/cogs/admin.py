@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 
 import discord
 from discord import app_commands
@@ -15,7 +14,12 @@ class Admin(commands.Cog):
     @app_commands.command(name="restart", description="Restart the bot and pull latest code.")
     @app_commands.default_permissions(manage_guild=True)
     async def restart(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message("Restarting...", ephemeral=True)
+        embed = discord.Embed(
+            title="🔄 restarting...",
+            description="pulling latest code and coming right back 🌱",
+            color=discord.Color.orange(),
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
         self.logger.info("Restart requested by %s", interaction.user)
         await self.bot.close()
         os._exit(0)
