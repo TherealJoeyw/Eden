@@ -9,11 +9,15 @@ class RoleSelect(discord.ui.Select):
             discord.SelectOption(label=role.name, value=str(role.id))
             for role in roles[:25]
         ]
+        if not options:
+            options = [discord.SelectOption(label="No roles available", value="__no_roles__")]
+
         super().__init__(
             placeholder="Select roles to assign",
             min_values=0,
             max_values=len(options),
             options=options,
+            custom_id="role_select",
         )
         self.assignable_role_ids = {role.id for role in roles[:25]}
 
@@ -23,7 +27,7 @@ class RoleSelect(discord.ui.Select):
             await interaction.response.send_message("Could not identify member.", ephemeral=True)
             return
 
-        selected_ids = {int(role_id) for role_id in self.values}
+        selected_ids = {int(role_id) for role_id in self.values if role_id.isdigit()}
         guild = interaction.guild
         if guild is None:
             await interaction.response.send_message("This can only be used in a server.", ephemeral=True)
