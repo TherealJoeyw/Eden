@@ -9,6 +9,13 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 
+def _backup_dir_and_prefix() -> tuple[Path, str]:
+    backup_target = Path(os.getenv("BACKUP_PATH", "/backups/eden.sql"))
+    if backup_target.suffix == ".sql":
+        return backup_target.parent, backup_target.stem
+    return backup_target, "eden"
+
+
 class DatabaseBackup(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -30,23 +37,14 @@ class DatabaseBackup(commands.Cog):
             self.logger.error("Database backup skipped: DATABASE_URL is not set")
             return False, None
 
-        backup_target = Path(os.getenv("BACKUP_PATH", "/backups/eden.sql"))
-        if backup_target.suffix == ".sql":
-            backup_dir = backup_target.parent
-            backup_prefix = backup_target.stem
-        else:
-            backup_dir = backup_target
-            backup_prefix = "eden"
-
+        backup_dir, backup_prefix = _backup_dir_and_prefix()
         dump_path = backup_dir / f"{backup_prefix}_{date.today().isoformat()}.sql"
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         process = await asyncio.create_subprocess_exec(
             "pg_dump",
-            "--dbname",
-            database_url,
-            "--file",
-            str(dump_path),
+            "--dbname", database_url,
+            "--file", str(dump_path),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -55,6 +53,7 @@ class DatabaseBackup(commands.Cog):
         if process.returncode != 0:
             error = stderr.decode().strip() or "unknown error"
             self.logger.error("Database backup failed for %s: %s", dump_path, error)
+            dump_path.unlink(missing_ok=True)
             return False, dump_path
 
         dumps = sorted(backup_dir.glob(f"{backup_prefix}_*.sql"))
@@ -73,10 +72,9 @@ class DatabaseBackup(commands.Cog):
 
         process = await asyncio.create_subprocess_exec(
             "psql",
-            "--dbname",
-            database_url,
-            "--file",
-            str(dump_path),
+            "--dbname", database_url,
+            "--single-transaction",
+            "--file", str(dump_path),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -91,9 +89,7 @@ class DatabaseBackup(commands.Cog):
         return True, ""
 
     def _list_backups(self) -> list[Path]:
-        backup_target = Path(os.getenv("BACKUP_PATH", "/backups/eden.sql"))
-        backup_dir = backup_target.parent if backup_target.suffix == ".sql" else backup_target
-        backup_prefix = backup_target.stem if backup_target.suffix == ".sql" else "eden"
+        backup_dir, backup_prefix = _backup_dir_and_prefix()
         return sorted(backup_dir.glob(f"{backup_prefix}_*.sql"), reverse=True)
 
     @app_commands.command(name="backup", description="Run a database backup now.")
@@ -129,8 +125,9 @@ class DatabaseBackup(commands.Cog):
         if filename is None:
             dump_path = backups[0]
         else:
-            dump_path = backups[0].parent / filename
-            if dump_path not in backups:
+            backup_dir = backups[0].parent
+            resolved = (backup_dir / filename).resolve()
+            if resolved.parent != backup_dir.resolve() or resolved not in [p.resolve() for p in backups]:
                 listing = "\n".join(f"`{p.name}`" for p in backups)
                 embed = discord.Embed(
                     title="❓ backup not found",
@@ -139,6 +136,7 @@ class DatabaseBackup(commands.Cog):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
+            dump_path = resolved
 
         success, error = await self.restore_backup(dump_path)
         embed = discord.Embed(color=discord.Color.green() if success else discord.Color.red())
