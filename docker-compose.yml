@@ -1,8 +1,8 @@
 services:
   bot:
-    build: .
+    build: ${COMPOSE_BUILD_PATH:-/mnt/pool/Apps/Eden}
     env_file:
-      - .env
+      - ${COMPOSE_BUILD_PATH:-/mnt/pool/Apps/Eden}/.env
     depends_on:
       - postgres
     restart: unless-stopped
