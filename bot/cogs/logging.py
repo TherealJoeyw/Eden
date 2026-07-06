@@ -84,6 +84,9 @@ class MessageLogging(commands.Cog):
     @status_task.before_loop
     async def before_status_task(self) -> None:
         await self.bot.wait_until_ready()
+
+    @commands.Cog.listener()
+    async def on_ready(self) -> None:
         await self._send_status()
 
     @app_commands.command(name="set_log_channel", description="Set the channel used for message logs.")
