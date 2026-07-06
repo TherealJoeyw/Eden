@@ -1,36 +1,50 @@
+import os
+import re
+
 import discord
 from discord import app_commands
 from discord.ext import commands
+
+ENV_PATH = os.path.join(os.path.dirname(__file__), "../../.env")
+
+
+def _write_env_var(key: str, value: str) -> None:
+    path = os.path.abspath(ENV_PATH)
+    try:
+        with open(path, "r") as f:
+            content = f.read()
+    except FileNotFoundError:
+        content = ""
+
+    pattern = re.compile(rf"^{re.escape(key)}=.*$", re.MULTILINE)
+    line = f"{key}={value}"
+    if pattern.search(content):
+        content = pattern.sub(line, content)
+    else:
+        content = content.rstrip("\n") + f"\n{line}\n"
+
+    with open(path, "w") as f:
+        f.write(content)
+
+    os.environ[key] = value
+
+
+def _get_log_channel_id() -> int | None:
+    raw = os.getenv("LOG_CHANNEL_ID")
+    if raw and raw.isdigit():
+        return int(raw)
+    return None
 
 
 class MessageLogging(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    async def cog_load(self) -> None:
-        if getattr(self.bot, "db_pool", None) is None:
-            return
-        async with self.bot.db_pool.acquire() as connection:
-            await connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS guild_logging_settings (
-                    guild_id BIGINT PRIMARY KEY,
-                    log_channel_id BIGINT NOT NULL
-                )
-                """
-            )
-
-    async def _get_log_channel(self, guild: discord.Guild) -> discord.TextChannel | None:
-        if getattr(self.bot, "db_pool", None) is None:
+    def _get_log_channel(self, guild: discord.Guild) -> discord.TextChannel | None:
+        channel_id = _get_log_channel_id()
+        if channel_id is None:
             return None
-        async with self.bot.db_pool.acquire() as connection:
-            record = await connection.fetchrow(
-                "SELECT log_channel_id FROM guild_logging_settings WHERE guild_id = $1",
-                guild.id,
-            )
-        if not record:
-            return None
-        channel = guild.get_channel(record["log_channel_id"])
+        channel = guild.get_channel(channel_id)
         if isinstance(channel, discord.TextChannel):
             return channel
         return None
@@ -38,26 +52,11 @@ class MessageLogging(commands.Cog):
     @app_commands.command(name="set_log_channel", description="Set the channel used for message logs.")
     @app_commands.default_permissions(manage_guild=True)
     async def set_log_channel(self, interaction: discord.Interaction, channel: discord.TextChannel) -> None:
-        guild = interaction.guild
-        if guild is None:
+        if interaction.guild is None:
             await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
             return
 
-        if getattr(self.bot, "db_pool", None) is None:
-            await interaction.response.send_message("Database pool is unavailable.", ephemeral=True)
-            return
-
-        async with self.bot.db_pool.acquire() as connection:
-            await connection.execute(
-                """
-                INSERT INTO guild_logging_settings (guild_id, log_channel_id)
-                VALUES ($1, $2)
-                ON CONFLICT (guild_id)
-                DO UPDATE SET log_channel_id = EXCLUDED.log_channel_id
-                """,
-                guild.id,
-                channel.id,
-            )
+        _write_env_var("LOG_CHANNEL_ID", str(channel.id))
 
         embed = discord.Embed(
             title="✅ log channel updated",
@@ -70,7 +69,7 @@ class MessageLogging(commands.Cog):
     async def on_message_delete(self, message: discord.Message) -> None:
         if message.guild is None or message.author.bot:
             return
-        log_channel = await self._get_log_channel(message.guild)
+        log_channel = self._get_log_channel(message.guild)
         if log_channel is None:
             return
 
@@ -88,7 +87,7 @@ class MessageLogging(commands.Cog):
         if before.content == after.content:
             return
 
-        log_channel = await self._get_log_channel(before.guild)
+        log_channel = self._get_log_channel(before.guild)
         if log_channel is None:
             return
 
