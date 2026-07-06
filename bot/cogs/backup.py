@@ -8,6 +8,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
+from ._utils import stamp
+
 
 def _backup_dir_and_prefix() -> tuple[Path, str]:
     backup_target = Path(os.getenv("BACKUP_PATH", "/backups/eden.sql"))
@@ -106,7 +108,7 @@ class DatabaseBackup(commands.Cog):
             embed.title = "❌ backup failed"
             embed.description = f"path: `{dump_path}`" if dump_path else "backup was not created"
 
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=stamp(embed, self.bot), ephemeral=True)
 
     @app_commands.command(name="restore", description="Restore the database from a backup.")
     @app_commands.describe(filename="Backup filename to restore (leave blank to use the latest).")
@@ -117,7 +119,7 @@ class DatabaseBackup(commands.Cog):
         backups = self._list_backups()
         if not backups:
             await interaction.followup.send(
-                embed=discord.Embed(title="📭 no backups found", color=discord.Color.orange()),
+                embed=stamp(discord.Embed(title="📭 no backups found", color=discord.Color.orange()), self.bot),
                 ephemeral=True,
             )
             return
@@ -134,7 +136,7 @@ class DatabaseBackup(commands.Cog):
                     description=f"**available backups:**\n{listing}",
                     color=discord.Color.orange(),
                 )
-                await interaction.followup.send(embed=embed, ephemeral=True)
+                await interaction.followup.send(embed=stamp(embed, self.bot), ephemeral=True)
                 return
             dump_path = resolved
 
@@ -147,7 +149,7 @@ class DatabaseBackup(commands.Cog):
             embed.title = "❌ restore failed"
             embed.description = f"```{error}```"
 
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=stamp(embed, self.bot), ephemeral=True)
 
     @app_commands.command(name="listbackups", description="List available database backups.")
     @app_commands.default_permissions(manage_guild=True)
@@ -160,7 +162,7 @@ class DatabaseBackup(commands.Cog):
         else:
             embed.description = "\n".join(f"`{p.name}`" for p in backups)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=stamp(embed, self.bot), ephemeral=True)
 
     @backup_task.before_loop
     async def before_backup_task(self) -> None:

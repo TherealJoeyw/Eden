@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from ._utils import stamp
+
 
 class Introduction(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -23,7 +25,7 @@ class Introduction(commands.Cog):
         if self.bot.user and self.bot.user.avatar:
             embed.set_thumbnail(url=self.bot.user.avatar.url)
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=stamp(embed, self.bot))
 
 
 async def setup(bot: commands.Bot) -> None:

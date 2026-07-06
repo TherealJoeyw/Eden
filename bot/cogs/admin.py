@@ -6,6 +6,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from ._utils import stamp
+
 
 class Admin(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -20,7 +22,7 @@ class Admin(commands.Cog):
             description="pulling latest code and coming right back 🌱",
             color=discord.Color.orange(),
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=stamp(embed, self.bot), ephemeral=True)
         self.logger.info("Restart requested by %s", interaction.user)
         asyncio.get_event_loop().call_soon(os._exit, 1)
 

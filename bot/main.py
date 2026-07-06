@@ -1,4 +1,5 @@
 import os
+import random
 from datetime import datetime
 from pathlib import Path
 
@@ -21,6 +22,7 @@ class EdenBot(commands.Bot):
         self.guild_id = guild_id
         self.db_pool: asyncpg.Pool | None = None
         self.started_at: datetime | None = None
+        self.instance_id: str = format(random.randint(0, 0xFFFF), "04X")
 
     async def setup_hook(self) -> None:
         self.started_at = discord.utils.utcnow()
