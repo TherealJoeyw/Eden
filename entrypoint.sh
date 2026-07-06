@@ -9,6 +9,6 @@ rm -rf /app
 git clone --branch "$BRANCH" --single-branch "$REPO_URL" /app
 
 cd /app
-pip install --no-cache-dir -r requirements.txt
+python -m pip install --no-cache-dir -r requirements.txt
 
 exec python bot/main.py
