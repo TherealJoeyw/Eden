@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import shutil
 from datetime import date
 from pathlib import Path
 
@@ -25,6 +26,10 @@ class DatabaseBackup(commands.Cog):
             self.logger.info("Database backup created successfully: %s", dump_path)
 
     async def create_backup(self) -> tuple[bool, Path | None]:
+        if shutil.which("pg_dump") is None:
+            self.logger.warning("Database backup skipped: pg_dump is not available")
+            return False, None
+
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
             self.logger.error("Database backup skipped: DATABASE_URL is not set")
