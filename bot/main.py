@@ -1,4 +1,3 @@
-import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -12,8 +11,6 @@ from cogs.roles import RoleSelectView
 from cogs.tickets import CloseTicketView, OpenTicketView
 
 load_dotenv()
-
-logging.basicConfig(level=logging.INFO)
 
 
 class EdenBot(commands.Bot):
