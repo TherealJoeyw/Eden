@@ -1,24 +1,28 @@
 services:
   bot:
-    build: ${COMPOSE_BUILD_PATH:-/mnt/pool/Apps/Eden}
-    env_file:
-      - ${COMPOSE_BUILD_PATH:-/mnt/pool/Apps/Eden}/.env
-    # Add BACKUP_PATH=/backups to the .env file used above.
+    image: python:3.11-slim
+    command: >
+      sh -c "apt-get update -qq &&
+             apt-get install -y -qq --no-install-recommends postgresql-client &&
+             pip install -q -r /app/requirements.txt &&
+             python /app/bot/main.py"
     depends_on:
       - postgres
-    volumes:
-      - /mnt/pool/Apps/Eden/backups:/backups
+    env_file:
+      - /mnt/pool/Apps/Eden/.env
     restart: unless-stopped
+    volumes:
+      - /mnt/pool/Apps/Eden:/app
+      - /mnt/pool/Apps/Eden/backups:/backups
 
   postgres:
     image: postgres:16
     environment:
       POSTGRES_DB: eden
-      POSTGRES_USER: eden
       POSTGRES_PASSWORD: eden
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_USER: eden
     restart: unless-stopped
+    volumes:
+      - /mnt/pool/Apps/Eden/pgdata:/var/lib/postgresql/data
 
-volumes:
-  postgres_data:
+volumes: {}
