@@ -44,7 +44,7 @@ class EdenBot(commands.Bot):
         guild = discord.Object(id=self.guild_id)
         self.tree.copy_global_to(guild=guild)
         synced = await self.tree.sync(guild=guild)
-        logging.getLogger(__name__).info("Synced %s guild commands", len(synced))
+        print(f"Synced {len(synced)} guild commands")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
