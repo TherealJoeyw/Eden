@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from ._utils import stamp
+
 
 class CloseTicketButton(discord.ui.Button):
     def __init__(self):
@@ -21,6 +23,9 @@ class CloseTicketView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(CloseTicketButton())
+
+
+
 
 
 class OpenTicketButton(discord.ui.Button):
@@ -64,7 +69,7 @@ class OpenTicketButton(discord.ui.Button):
             description=f"hey {user.mention}! thanks for opening a ticket 💚\nstaff will be with you shortly, hang tight!",
             color=discord.Color.green(),
         )
-        await ticket_channel.send(embed=embed, view=CloseTicketView())
+        await ticket_channel.send(embed=stamp(embed, interaction.client), view=CloseTicketView())
         await interaction.response.send_message(
             f"🎫 ticket created: {ticket_channel.mention}",
             ephemeral=True,
@@ -89,7 +94,7 @@ class Tickets(commands.Cog):
             description="click the button below to open a private ticket and a staff member will assist you!",
             color=discord.Color.green(),
         )
-        await interaction.channel.send(embed=embed, view=OpenTicketView())
+        await interaction.channel.send(embed=stamp(embed, self.bot), view=OpenTicketView())
         await interaction.response.send_message("✅ verification panel posted!", ephemeral=True)
 
 

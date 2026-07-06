@@ -6,6 +6,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
+from ._utils import stamp
+
 ENV_PATH = os.path.join(os.path.dirname(__file__), "../../.env")
 
 
@@ -76,7 +78,7 @@ class MessageLogging(commands.Cog):
         embed.add_field(name="📡 latency", value=f"{latency_emoji} {latency_ms} ms", inline=True)
         embed.add_field(name="⏱️ uptime", value=f"`{uptime}`", inline=True)
         embed.set_footer(text=discord.utils.utcnow().strftime("last updated %Y-%m-%d %H:%M UTC"))
-        await channel.send(embed=embed)
+        await channel.send(embed=stamp(embed, self.bot))
 
     @tasks.loop(hours=6)
     async def status_task(self) -> None:
@@ -121,7 +123,7 @@ class MessageLogging(commands.Cog):
         embed.add_field(name="📍 channel", value=message.channel.mention, inline=True)
         embed.add_field(name="💬 content", value=message.content or "*no content*", inline=False)
         embed.set_footer(text=f"user id: {message.author.id}")
-        await log_channel.send(embed=embed)
+        await log_channel.send(embed=stamp(embed, self.bot))
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
@@ -140,7 +142,7 @@ class MessageLogging(commands.Cog):
         embed.add_field(name="before", value=before.content or "*no content*", inline=False)
         embed.add_field(name="after", value=after.content or "*no content*", inline=False)
         embed.set_footer(text=f"user id: {before.author.id}")
-        await log_channel.send(embed=embed)
+        await log_channel.send(embed=stamp(embed, self.bot))
 
 
 async def setup(bot: commands.Bot) -> None:
