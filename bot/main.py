@@ -46,7 +46,6 @@ class EdenBot(commands.Bot):
         synced = await self.tree.sync(guild=guild)
         print(f"Synced {len(synced)} guild commands")
 
-    @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot:
             return
