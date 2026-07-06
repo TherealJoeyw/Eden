@@ -1,9 +1,10 @@
 import os
 import re
+from datetime import timedelta
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 ENV_PATH = os.path.join(os.path.dirname(__file__), "../../.env")
 
@@ -39,6 +40,10 @@ def _get_log_channel_id() -> int | None:
 class MessageLogging(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.status_task.start()
+
+    def cog_unload(self) -> None:
+        self.status_task.cancel()
 
     def _get_log_channel(self, guild: discord.Guild) -> discord.TextChannel | None:
         channel_id = _get_log_channel_id()
@@ -48,6 +53,38 @@ class MessageLogging(commands.Cog):
         if isinstance(channel, discord.TextChannel):
             return channel
         return None
+
+    async def _send_status(self) -> None:
+        channel_id = _get_log_channel_id()
+        if channel_id is None:
+            return
+        channel = self.bot.get_channel(channel_id)
+        if not isinstance(channel, discord.TextChannel):
+            return
+
+        latency_ms = round(self.bot.latency * 1000, 2)
+        latency_emoji = "🟢" if latency_ms < 100 else "🟡" if latency_ms < 200 else "🔴"
+
+        uptime = "Unknown"
+        started_at = getattr(self.bot, "started_at", None)
+        if started_at is not None:
+            elapsed = discord.utils.utcnow() - started_at
+            uptime = str(timedelta(seconds=int(elapsed.total_seconds())))
+
+        embed = discord.Embed(title="🌱 eden — status", color=discord.Color.green())
+        embed.add_field(name="📡 latency", value=f"{latency_emoji} {latency_ms} ms", inline=True)
+        embed.add_field(name="⏱️ uptime", value=f"`{uptime}`", inline=True)
+        embed.set_footer(text=discord.utils.utcnow().strftime("last updated %Y-%m-%d %H:%M UTC"))
+        await channel.send(embed=embed)
+
+    @tasks.loop(hours=6)
+    async def status_task(self) -> None:
+        await self._send_status()
+
+    @status_task.before_loop
+    async def before_status_task(self) -> None:
+        await self.bot.wait_until_ready()
+        await self._send_status()
 
     @app_commands.command(name="set_log_channel", description="Set the channel used for message logs.")
     @app_commands.default_permissions(manage_guild=True)
