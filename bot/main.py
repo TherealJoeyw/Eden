@@ -1,4 +1,3 @@
-import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -45,7 +44,7 @@ class EdenBot(commands.Bot):
         guild = discord.Object(id=self.guild_id)
         self.tree.copy_global_to(guild=guild)
         synced = await self.tree.sync(guild=guild)
-        logging.info("Synced %s guild commands", len(synced))
+        logging.getLogger(__name__).info("Synced %s guild commands", len(synced))
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
