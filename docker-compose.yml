@@ -3,8 +3,11 @@ services:
     build: ${COMPOSE_BUILD_PATH:-/mnt/pool/Apps/Eden}
     env_file:
       - ${COMPOSE_BUILD_PATH:-/mnt/pool/Apps/Eden}/.env
+    # Add BACKUP_PATH=/backups to the .env file used above.
     depends_on:
       - postgres
+    volumes:
+      - /mnt/pool/Apps/Eden/backups:/backups
     restart: unless-stopped
 
   postgres:
