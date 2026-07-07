@@ -100,6 +100,7 @@ class RoleSelectView(discord.ui.View):
 class Roles(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self._handled: set[int] = set()
         bot.add_view(RoleSelectView.from_ids(_get_saved_role_ids()))
 
     @app_commands.command(name="roles_panel", description="Post a self-assign roles panel with chosen roles.")
@@ -142,6 +143,10 @@ class Roles(commands.Cog):
                 ephemeral=True,
             )
             return
+
+        if interaction.id in self._handled:
+            return
+        self._handled.add(interaction.id)
 
         await interaction.response.defer(ephemeral=True)
         _save_role_ids(roles)
