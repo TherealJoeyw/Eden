@@ -118,12 +118,24 @@ class MessageLogging(commands.Cog):
         if log_channel is None:
             return
 
+        image_attachments = [a for a in message.attachments if a.content_type and a.content_type.startswith("image/")]
+        other_attachments = [a for a in message.attachments if a not in image_attachments]
+
         embed = discord.Embed(title="🗑️ message deleted", color=discord.Color.red())
         embed.add_field(name="👤 author", value=message.author.mention, inline=True)
         embed.add_field(name="📍 channel", value=message.channel.mention, inline=True)
         embed.add_field(name="💬 content", value=message.content or "*no content*", inline=False)
+        if other_attachments:
+            embed.add_field(name="📎 attachments", value="\n".join(a.filename for a in other_attachments), inline=False)
+        if image_attachments:
+            embed.set_image(url=image_attachments[0].url)
         embed.set_footer(text=f"user id: {message.author.id}")
-        await log_channel.send(embed=stamp(embed, self.bot))
+
+        extra_embeds = [
+            discord.Embed(color=discord.Color.red()).set_image(url=a.url)
+            for a in image_attachments[1:]
+        ]
+        await log_channel.send(embeds=[stamp(embed, self.bot)] + extra_embeds)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
