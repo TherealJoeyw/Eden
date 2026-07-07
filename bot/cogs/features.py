@@ -30,6 +30,10 @@ FEATURES = {
         "`/restore` — restore from a backup file",
         "`/listbackups` — list available backups",
     ],
+    "📈 activity": [
+        "`/activity @user` — view a member's message stats and activity tier",
+        "`/topmembers [limit]` — ranked list of most active members this week",
+    ],
     "🔧 admin": [
         "`/restart` — restart the bot",
         "`/diagnostics` — view bot health info",
