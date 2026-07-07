@@ -4,18 +4,14 @@ from discord.ext import commands
 
 from ._utils import stamp
 
-TIERS = [
-    (50,  "🔥 very active"),
-    (20,  "🟢 active"),
-    (5,   "🟡 moderate"),
-    (0,   "🔴 quiet"),
-]
-
-
-def _tier(daily_avg: float) -> str:
-    for threshold, label in TIERS:
-        if daily_avg >= threshold:
-            return label
+def _tier(percentile: float) -> str:
+    """percentile is 0-100, where 100 = most active on the server."""
+    if percentile >= 90:
+        return "🔥 very active"
+    if percentile >= 60:
+        return "🟢 active"
+    if percentile >= 25:
+        return "🟡 moderate"
     return "🔴 quiet"
 
 
@@ -97,14 +93,32 @@ class Activity(commands.Cog):
                 """,
                 member.id,
             )
+            percentile = await conn.fetchval(
+                """
+                WITH totals AS (
+                    SELECT user_id, SUM(msgs) AS week_msgs
+                    FROM activity_daily
+                    WHERE day >= current_date - INTERVAL '6 days'
+                    GROUP BY user_id
+                )
+                SELECT ROUND(
+                    100.0 * (SELECT COUNT(*) FROM totals WHERE week_msgs <= $2)
+                    / NULLIF((SELECT COUNT(*) FROM totals), 0)
+                , 1)
+                """,
+                member.id,
+                week or 0,
+            )
 
         total = row["total_msgs"] if row else 0
         last_active = row["last_active"] if row else None
         daily_avg = (week or 0) / 7
+        pct = float(percentile or 0)
 
         embed = discord.Embed(title=f"📊 activity — {member.display_name}", color=discord.Color.blurple())
         embed.set_thumbnail(url=member.display_avatar.url)
-        embed.add_field(name="tier", value=_tier(daily_avg), inline=True)
+        embed.add_field(name="tier", value=_tier(pct), inline=True)
+        embed.add_field(name="server percentile", value=f"top {100 - pct:.0f}%", inline=True)
         embed.add_field(name="7d avg", value=f"{daily_avg:.1f} msgs/day", inline=True)
         embed.add_field(name="7d total", value=f"{week or 0} msgs", inline=True)
         embed.add_field(name="all time", value=f"{total} msgs", inline=True)
@@ -152,12 +166,15 @@ class Activity(commands.Cog):
             await interaction.response.send_message("No activity recorded yet.", ephemeral=True)
             return
 
+        total_users = len(rows)
         lines = []
         for i, row in enumerate(rows, 1):
             member = interaction.guild.get_member(row["user_id"]) if interaction.guild else None
             name = member.display_name if member else f"<@{row['user_id']}>"
             daily_avg = row["week_msgs"] / 7
-            lines.append(f"`{i}.` {name} — {row['week_msgs']} msgs ({daily_avg:.1f}/day) {_tier(daily_avg)}")
+            # rank 1 = top, so percentile = 100 - ((i-1)/total * 100)
+            pct = 100 - ((i - 1) / total_users * 100)
+            lines.append(f"`{i}.` {name} — {row['week_msgs']} msgs ({daily_avg:.1f}/day) {_tier(pct)}")
 
         embed = discord.Embed(
             title="📊 most active members — last 7 days",
