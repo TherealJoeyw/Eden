@@ -23,6 +23,7 @@ FEATURES = {
         "right-click any message → **Apps → Report Message**",
         "`/report <message_id>` — report by message ID",
         "`/set_report_channel` — set where reports are sent",
+        "`/set_report_ping_role` — set the role pinged on new reports",
     ],
     "💾 backups": [
         "`/backup` — trigger a manual database backup",
