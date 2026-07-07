@@ -18,8 +18,6 @@ class EdenBot(commands.Bot):
     def __init__(self, guild_id: int):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True
-        intents.presences = True
         super().__init__(command_prefix="!", intents=intents)
         self.guild_id = guild_id
         self.db_pool: asyncpg.Pool | None = None

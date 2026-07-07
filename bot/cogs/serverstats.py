@@ -4,14 +4,12 @@ from discord.ext import commands, tasks
 
 STAT_CHOICES = [
     app_commands.Choice(name="Total Members", value="total"),
-    app_commands.Choice(name="Online Members", value="online"),
     app_commands.Choice(name="Bot Count", value="bots"),
     app_commands.Choice(name="Human Members", value="humans"),
 ]
 
 STAT_LABELS = {
     "total": "👥 Members",
-    "online": "🟢 Online",
     "bots": "🤖 Bots",
     "humans": "👤 Humans",
 }
@@ -20,8 +18,6 @@ STAT_LABELS = {
 def _count(guild: discord.Guild, stat: str) -> int:
     if stat == "total":
         return guild.member_count or len(guild.members)
-    if stat == "online":
-        return sum(1 for m in guild.members if m.status != discord.Status.offline and not m.bot)
     if stat == "bots":
         return sum(1 for m in guild.members if m.bot)
     if stat == "humans":
