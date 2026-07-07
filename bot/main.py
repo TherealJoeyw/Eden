@@ -46,12 +46,6 @@ class EdenBot(commands.Bot):
         synced = await self.tree.sync(guild=guild)
         print(f"Synced {len(synced)} guild commands")
 
-    async def on_message(self, message: discord.Message) -> None:
-        if message.author.bot:
-            return
-        if self.user and self.user.mentioned_in(message):
-            await message.reply("pong 🏓")
-
     async def close(self) -> None:
         if self.db_pool is not None:
             await self.db_pool.close()

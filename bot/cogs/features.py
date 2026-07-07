@@ -37,10 +37,10 @@ FEATURES = {
     "🔧 admin": [
         "`/restart` — restart the bot",
         "`/diagnostics` — view bot health info",
+        "`/ping` — check the bot's latency",
     ],
     "👋 misc": [
         "`/introduction` — post a server introduction embed",
-        "mention the bot — get a pong 🏓",
     ],
 }
 
