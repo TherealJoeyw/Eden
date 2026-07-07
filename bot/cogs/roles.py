@@ -102,42 +102,51 @@ class Roles(commands.Cog):
         self.bot = bot
         bot.add_view(RoleSelectView.from_ids(_get_saved_role_ids()))
 
-    @app_commands.command(name="roles_panel", description="Post a self-assign roles panel.")
+    @app_commands.command(name="roles_panel", description="Post a self-assign roles panel with chosen roles.")
+    @app_commands.describe(
+        title="Label shown above the dropdown",
+        role1="Role to include", role2="Role to include", role3="Role to include",
+        role4="Role to include", role5="Role to include", role6="Role to include",
+        role7="Role to include", role8="Role to include", role9="Role to include",
+        role10="Role to include",
+    )
     @app_commands.default_permissions(manage_roles=True)
-    async def roles_panel(self, interaction: discord.Interaction) -> None:
+    async def roles_panel(
+        self,
+        interaction: discord.Interaction,
+        role1: discord.Role,
+        role2: discord.Role | None = None,
+        role3: discord.Role | None = None,
+        role4: discord.Role | None = None,
+        role5: discord.Role | None = None,
+        role6: discord.Role | None = None,
+        role7: discord.Role | None = None,
+        role8: discord.Role | None = None,
+        role9: discord.Role | None = None,
+        role10: discord.Role | None = None,
+        title: str = "Choose your roles from the dropdown below:",
+    ) -> None:
         guild = interaction.guild
         if guild is None:
             await interaction.response.send_message("This command can only be used in a server.", ephemeral=True)
             return
 
-        member = guild.me
-        if member is None:
-            await interaction.response.send_message("Bot member state unavailable.", ephemeral=True)
-            return
+        roles = [r for r in [role1, role2, role3, role4, role5, role6, role7, role8, role9, role10] if r is not None]
 
-        available_roles = [
-            role
-            for role in guild.roles
-            if not role.is_default()
-            and not role.managed
-            and role < member.top_role
-        ]
-        available_roles.reverse()
-
-        if not available_roles:
+        bot_member = guild.me
+        invalid = [r for r in roles if bot_member and r >= bot_member.top_role]
+        if invalid:
+            names = ", ".join(r.mention for r in invalid)
             await interaction.response.send_message(
-                "No assignable roles found below my highest role.",
+                f"These roles are above my highest role and can't be assigned: {names}",
                 ephemeral=True,
             )
             return
 
-        _save_role_ids(available_roles)
-        view = RoleSelectView(available_roles)
-        await interaction.channel.send(
-            "Choose your roles from the dropdown below:",
-            view=view,
-        )
-        await interaction.response.send_message("Roles panel posted.", ephemeral=True)
+        _save_role_ids(roles)
+        view = RoleSelectView(roles)
+        await interaction.channel.send(title, view=view)
+        await interaction.response.send_message("✅ roles panel posted.", ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:
