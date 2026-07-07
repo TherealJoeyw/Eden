@@ -8,7 +8,6 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from cogs.roles import RoleSelectView
 from cogs.tickets import CloseTicketView, OpenTicketView
 
 load_dotenv()
@@ -33,7 +32,6 @@ class EdenBot(commands.Bot):
 
         self.db_pool = await asyncpg.create_pool(dsn=database_url)
 
-        self.add_view(RoleSelectView([]))
         self.add_view(CloseTicketView())
         self.add_view(OpenTicketView())
 
