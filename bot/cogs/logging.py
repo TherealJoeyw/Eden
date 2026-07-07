@@ -42,7 +42,7 @@ def _get_log_channel_id() -> int | None:
 class MessageLogging(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self._startup_status_sent = False
+        self._startup_status_sent = getattr(bot, "_logging_status_sent", False)
         self.status_task.start()
 
     def cog_unload(self) -> None:
@@ -90,9 +90,11 @@ class MessageLogging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        if not self._startup_status_sent:
-            self._startup_status_sent = True
-            await self._send_status()
+        if getattr(self.bot, "_logging_status_sent", False):
+            return
+        self.bot._logging_status_sent = True  # type: ignore[attr-defined]
+        self._startup_status_sent = True
+        await self._send_status()
 
     @app_commands.command(name="set_log_channel", description="Set the channel used for message logs.")
     @app_commands.default_permissions(manage_guild=True)
