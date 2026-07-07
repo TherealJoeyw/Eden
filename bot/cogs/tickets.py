@@ -48,6 +48,8 @@ class OpenTicketButton(discord.ui.Button):
             )
             return
 
+        await interaction.response.defer(ephemeral=True)
+
         category = discord.utils.get(guild.categories, name="Verification Tickets")
         if category is None:
             category = await guild.create_category("Verification Tickets", reason="Ticket setup")
@@ -70,7 +72,7 @@ class OpenTicketButton(discord.ui.Button):
             color=discord.Color.green(),
         )
         await ticket_channel.send(embed=stamp(embed, interaction.client), view=CloseTicketView())
-        await interaction.response.send_message(
+        await interaction.followup.send(
             f"🎫 ticket created: {ticket_channel.mention}",
             ephemeral=True,
         )
@@ -89,13 +91,14 @@ class Tickets(commands.Cog):
     @app_commands.command(name="verification_panel", description="Post the verification ticket panel.")
     @app_commands.default_permissions(manage_channels=True)
     async def verification_panel(self, interaction: discord.Interaction) -> None:
+        await interaction.response.defer(ephemeral=True)
         embed = discord.Embed(
             title="🌱 need help getting verified?",
             description="click the button below to open a private ticket and a staff member will assist you!",
             color=discord.Color.green(),
         )
         await interaction.channel.send(embed=stamp(embed, self.bot), view=OpenTicketView())
-        await interaction.response.send_message("✅ verification panel posted!", ephemeral=True)
+        await interaction.followup.send("✅ verification panel posted!", ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:
