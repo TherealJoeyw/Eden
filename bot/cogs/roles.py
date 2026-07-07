@@ -143,10 +143,11 @@ class Roles(commands.Cog):
             )
             return
 
+        await interaction.response.defer(ephemeral=True)
         _save_role_ids(roles)
         view = RoleSelectView(roles)
         await interaction.channel.send(title, view=view)
-        await interaction.response.send_message("✅ roles panel posted.", ephemeral=True)
+        await interaction.followup.send("✅ roles panel posted.", ephemeral=True)
 
 
 async def setup(bot: commands.Bot) -> None:
