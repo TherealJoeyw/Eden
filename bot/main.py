@@ -8,7 +8,6 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from cogs.roles import RoleSelectView
 from cogs.tickets import CloseTicketView, OpenTicketView
 
 load_dotenv()
@@ -33,7 +32,6 @@ class EdenBot(commands.Bot):
 
         self.db_pool = await asyncpg.create_pool(dsn=database_url)
 
-        self.add_view(RoleSelectView([]))
         self.add_view(CloseTicketView())
         self.add_view(OpenTicketView())
 
@@ -47,12 +45,6 @@ class EdenBot(commands.Bot):
         self.tree.copy_global_to(guild=guild)
         synced = await self.tree.sync(guild=guild)
         print(f"Synced {len(synced)} guild commands")
-
-    async def on_message(self, message: discord.Message) -> None:
-        if message.author.bot:
-            return
-        if self.user and self.user.mentioned_in(message):
-            await message.reply("pong 🏓")
 
     async def close(self) -> None:
         if self.db_pool is not None:

@@ -35,6 +35,13 @@ def _get_report_channel_id() -> int | None:
     return None
 
 
+def _get_report_ping_role_id() -> int | None:
+    raw = os.getenv("REPORT_PING_ROLE_ID")
+    if raw and raw.isdigit():
+        return int(raw)
+    return None
+
+
 async def _send_report(
     bot: commands.Bot,
     reporter: discord.Member,
@@ -62,7 +69,12 @@ async def _send_report(
         embed.add_field(name="📎 attachments", value=names, inline=False)
     embed.set_footer(text=f"reporter id: {reporter.id} · author id: {message.author.id}")
 
-    await channel.send(embed=stamp(embed, bot))
+    ping = None
+    role_id = _get_report_ping_role_id()
+    if role_id:
+        ping = f"<@&{role_id}>"
+
+    await channel.send(content=ping, embed=stamp(embed, bot))
     return True
 
 
@@ -165,6 +177,19 @@ class Reports(commands.Cog):
         embed = discord.Embed(
             title="✅ report channel set",
             description=f"reports will now be sent to {channel.mention}",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="set_report_ping_role", description="Set the role to ping when a report is submitted.")
+    @app_commands.default_permissions(manage_guild=True)
+    async def set_report_ping_role(
+        self, interaction: discord.Interaction, role: discord.Role
+    ) -> None:
+        _write_env_var("REPORT_PING_ROLE_ID", str(role.id))
+        embed = discord.Embed(
+            title="✅ report ping role set",
+            description=f"{role.mention} will be pinged on every new report.",
             color=discord.Color.green(),
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)

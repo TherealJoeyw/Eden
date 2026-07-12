@@ -23,19 +23,27 @@ FEATURES = {
         "right-click any message → **Apps → Report Message**",
         "`/report <message_id>` — report by message ID",
         "`/set_report_channel` — set where reports are sent",
+        "`/set_report_ping_role` — set the role pinged on new reports",
     ],
     "💾 backups": [
         "`/backup` — trigger a manual database backup",
         "`/restore` — restore from a backup file",
         "`/listbackups` — list available backups",
     ],
+    "📈 activity": [
+        "`/activity @user` — view a member's message stats and activity tier",
+        "`/topmembers [limit]` — ranked list of most active members this week",
+    ],
     "🔧 admin": [
         "`/restart` — restart the bot",
         "`/diagnostics` — view bot health info",
+        "`/ping` — check the bot's latency",
+    ],
+    "🔗 auto embeds": [
+        "paste a Twitter/X, Instagram, or TikTok link — bot replies with a working embed",
     ],
     "👋 misc": [
         "`/introduction` — post a server introduction embed",
-        "mention the bot — get a pong 🏓",
     ],
 }
 
