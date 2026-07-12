@@ -39,6 +39,9 @@ FEATURES = {
         "`/diagnostics` — view bot health info",
         "`/ping` — check the bot's latency",
     ],
+    "🔗 auto embeds": [
+        "paste a Twitter/X, Instagram, or TikTok link — bot replies with a working embed",
+    ],
     "👋 misc": [
         "`/introduction` — post a server introduction embed",
     ],
