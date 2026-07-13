@@ -39,6 +39,10 @@ FEATURES = {
         "`/diagnostics` — view bot health info",
         "`/ping` — check the bot's latency",
     ],
+    "⭐ starboard": [
+        "`/set_starboard_channel` — set where starred messages are posted",
+        "`/set_starboard_threshold` — set how many ⭐ reactions are needed (default 3)",
+    ],
     "🔗 auto embeds": [
         "paste a Twitter/X, Instagram, or TikTok link — bot replies with a working embed",
     ],
