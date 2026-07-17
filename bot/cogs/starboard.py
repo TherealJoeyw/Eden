@@ -75,6 +75,15 @@ class Starboard(commands.Cog):
     async def on_ready(self) -> None:
         await self._load_posted()
 
+    async def _get_channel(self, channel_id: int) -> discord.TextChannel | None:
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(channel_id)
+            except discord.HTTPException:
+                return None
+        return channel if isinstance(channel, discord.TextChannel) else None
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         if str(payload.emoji) != "⭐":
@@ -85,26 +94,26 @@ class Starboard(commands.Cog):
         channel_id = _get_starboard_channel_id()
         if channel_id is None:
             return
-        threshold = _get_starboard_threshold()
 
-        channel = self.bot.get_channel(payload.channel_id)
-        if not isinstance(channel, discord.TextChannel):
+        if payload.channel_id == channel_id:
             return
-        if channel.id == channel_id:
+
+        channel = await self._get_channel(payload.channel_id)
+        if channel is None:
             return
 
         try:
             message = await channel.fetch_message(payload.message_id)
-        except discord.NotFound:
+        except discord.HTTPException:
             return
 
         star_reaction = discord.utils.get(message.reactions, emoji="⭐")
         count = star_reaction.count if star_reaction else 0
-        if count < threshold:
+        if count < _get_starboard_threshold():
             return
 
-        starboard_channel = self.bot.get_channel(channel_id)
-        if not isinstance(starboard_channel, discord.TextChannel):
+        starboard_channel = await self._get_channel(channel_id)
+        if starboard_channel is None:
             return
 
         await self._mark_posted(message.id)
