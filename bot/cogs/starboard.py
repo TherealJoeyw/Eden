@@ -129,9 +129,20 @@ class Starboard(commands.Cog):
         embed.add_field(name="source", value=f"[jump to message]({message.jump_url})", inline=True)
         embed.add_field(name="channel", value=message.channel.mention, inline=True)
 
+        image_url = None
         image_attachments = [a for a in message.attachments if a.content_type and a.content_type.startswith("image/")]
         if image_attachments:
-            embed.set_image(url=image_attachments[0].url)
+            image_url = image_attachments[0].url
+        if image_url is None:
+            for msg_embed in message.embeds:
+                if msg_embed.image and msg_embed.image.url:
+                    image_url = msg_embed.image.url
+                    break
+                if msg_embed.thumbnail and msg_embed.thumbnail.url:
+                    image_url = msg_embed.thumbnail.url
+                    break
+        if image_url:
+            embed.set_image(url=image_url)
 
         await starboard_channel.send(content=f"⭐ **{count}** {message.channel.mention}", embed=stamp(embed, self.bot))
 
