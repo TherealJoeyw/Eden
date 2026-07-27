@@ -31,12 +31,12 @@ def _extract_fixed(content: str) -> list[str]:
 
 
 _MAX_SEEN = 1000
+_seen: set[int] = set()
 
 
 class AutoEmbed(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self._seen: set[int] = set()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -47,11 +47,11 @@ class AutoEmbed(commands.Cog):
         if not fixed:
             return
 
-        if message.id in self._seen:
+        if message.id in _seen:
             return
-        self._seen.add(message.id)
-        if len(self._seen) > _MAX_SEEN:
-            self._seen.pop()
+        _seen.add(message.id)
+        if len(_seen) > _MAX_SEEN:
+            _seen.pop()
 
         await message.reply(" ".join(fixed), mention_author=False)
 
