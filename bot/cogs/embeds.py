@@ -30,29 +30,13 @@ def _extract_fixed(content: str) -> list[str]:
     return fixed
 
 
+_MAX_SEEN = 1000
+
+
 class AutoEmbed(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
-    async def _claim(self, message_id: int) -> bool:
-        """Returns True if this instance should handle the message, False if already claimed."""
-        pool = getattr(self.bot, "db_pool", None)
-        if pool is None:
-            return True
-        async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS embed_handled (
-                    message_id BIGINT PRIMARY KEY,
-                    handled_at TIMESTAMPTZ DEFAULT now()
-                )
-                """
-            )
-            result = await conn.execute(
-                "INSERT INTO embed_handled (message_id) VALUES ($1) ON CONFLICT DO NOTHING",
-                message_id,
-            )
-        return result == "INSERT 0 1"
+        self._seen: set[int] = set()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -63,8 +47,11 @@ class AutoEmbed(commands.Cog):
         if not fixed:
             return
 
-        if not await self._claim(message.id):
+        if message.id in self._seen:
             return
+        self._seen.add(message.id)
+        if len(self._seen) > _MAX_SEEN:
+            self._seen.pop()
 
         await message.edit(suppress=True)
         await message.reply(" ".join(fixed), mention_author=False)
