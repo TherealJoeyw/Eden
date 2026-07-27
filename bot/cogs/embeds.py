@@ -53,7 +53,6 @@ class AutoEmbed(commands.Cog):
         if len(self._seen) > _MAX_SEEN:
             self._seen.pop()
 
-        await message.edit(suppress=True)
         await message.reply(" ".join(fixed), mention_author=False)
 
 
