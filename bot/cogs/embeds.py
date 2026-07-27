@@ -32,6 +32,8 @@ def _extract_fixed(content: str) -> list[str]:
 
 _MAX_SEEN = 1000
 _seen: set[int] = set()
+# channel_id -> last reply content, to deduplicate back-to-back identical sends
+_last_reply: dict[int, str] = {}
 
 
 class AutoEmbed(commands.Cog):
@@ -47,13 +49,19 @@ class AutoEmbed(commands.Cog):
         if not fixed:
             return
 
+        reply_text = " ".join(fixed)
+
+        if _last_reply.get(message.channel.id) == reply_text:
+            return
+
         if message.id in _seen:
             return
         _seen.add(message.id)
         if len(_seen) > _MAX_SEEN:
             _seen.pop()
 
-        await message.reply(" ".join(fixed), mention_author=False)
+        _last_reply[message.channel.id] = reply_text
+        await message.reply(reply_text, mention_author=False)
 
 
 async def setup(bot: commands.Bot) -> None:
