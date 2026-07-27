@@ -1,4 +1,5 @@
 import re
+import time
 
 import discord
 from discord import app_commands
@@ -30,8 +31,9 @@ def _extract_fixed(content: str) -> list[str]:
     return fixed
 
 
-_MAX_SEEN = 1000
-_seen: set[int] = set()
+# channel_id -> (reply_text, timestamp) — expires after 5 seconds
+_last_reply: dict[int, tuple[str, float]] = {}
+_DEDUP_WINDOW = 5.0
 
 
 class AutoEmbed(commands.Cog):
@@ -47,13 +49,14 @@ class AutoEmbed(commands.Cog):
         if not fixed:
             return
 
-        if message.id in _seen:
-            return
-        _seen.add(message.id)
-        if len(_seen) > _MAX_SEEN:
-            _seen.pop()
+        reply_text = " ".join(fixed)
 
-        await message.reply(" ".join(fixed), mention_author=False)
+        last = _last_reply.get(message.channel.id)
+        if last and last[0] == reply_text and time.monotonic() - last[1] < _DEDUP_WINDOW:
+            return
+
+        _last_reply[message.channel.id] = (reply_text, time.monotonic())
+        await message.reply(reply_text, mention_author=False)
 
 
 async def setup(bot: commands.Bot) -> None:
