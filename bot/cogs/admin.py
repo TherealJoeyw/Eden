@@ -91,7 +91,8 @@ class Admin(commands.Cog):
         )
         await interaction.response.send_message(embed=stamp(embed, self.bot), ephemeral=True)
         self.logger.info("Restart requested by %s", interaction.user)
-        asyncio.get_event_loop().call_soon(os._exit, 1)
+        await asyncio.sleep(0.5)
+        os._exit(1)
 
 
 async def setup(bot: commands.Bot) -> None:
