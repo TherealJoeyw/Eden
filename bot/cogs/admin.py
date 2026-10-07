@@ -95,9 +95,11 @@ class Admin(commands.Cog):
         os._exit(1)
 
     @commands.command(name="forward")
-    @commands.has_permissions(manage_messages=True)
     async def forward(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
         """Reply to a message with !forward <channel> to forward it verbatim to that channel."""
+        if ctx.author.id != 1056388449512464424:
+            return
+
         if ctx.message.reference is None:
             await ctx.send("You need to reply to a message to forward it.", delete_after=5)
             return
@@ -132,9 +134,7 @@ class Admin(commands.Cog):
 
     @forward.error
     async def forward_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send("You need the **Manage Messages** permission to use this command.", delete_after=5)
-        elif isinstance(error, commands.BadArgument):
+        if isinstance(error, commands.BadArgument):
             await ctx.send("Could not find that channel. Pass a channel mention or valid channel ID.", delete_after=5)
         else:
             self.logger.exception("Error in forward command", exc_info=error)
