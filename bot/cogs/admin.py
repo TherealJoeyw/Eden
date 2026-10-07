@@ -94,6 +94,51 @@ class Admin(commands.Cog):
         await asyncio.sleep(0.5)
         os._exit(1)
 
+    @commands.command(name="forward")
+    @commands.has_permissions(manage_messages=True)
+    async def forward(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
+        """Reply to a message with !forward <channel> to forward it verbatim to that channel."""
+        if ctx.message.reference is None:
+            await ctx.send("You need to reply to a message to forward it.", delete_after=5)
+            return
+
+        ref = ctx.message.reference
+        source: discord.Message | None = ref.resolved if isinstance(ref.resolved, discord.Message) else None
+        if source is None:
+            try:
+                source = await ctx.channel.fetch_message(ref.message_id)
+            except discord.NotFound:
+                await ctx.send("Could not find the message you replied to.", delete_after=5)
+                return
+
+        files: list[discord.File] = []
+        for attachment in source.attachments:
+            try:
+                files.append(await attachment.to_file())
+            except discord.HTTPException:
+                pass
+
+        await channel.send(
+            content=source.content or None,
+            embeds=source.embeds[:10],
+            files=files,
+        )
+
+        confirm = discord.Embed(
+            description=f"Message forwarded to {channel.mention}.",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=stamp(confirm, self.bot), delete_after=5)
+
+    @forward.error
+    async def forward_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.send("You need the **Manage Messages** permission to use this command.", delete_after=5)
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send("Could not find that channel. Pass a channel mention or valid channel ID.", delete_after=5)
+        else:
+            self.logger.exception("Error in forward command", exc_info=error)
+
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Admin(bot))
