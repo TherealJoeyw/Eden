@@ -31,9 +31,9 @@ def _extract_fixed(content: str) -> list[str]:
     return fixed
 
 
-# channel_id -> (reply_text, timestamp) — expires after 5 seconds
-_last_reply: dict[int, tuple[str, float]] = {}
-_DEDUP_WINDOW = 5.0
+# (channel_id, reply_text) -> timestamp — expires after 30 seconds
+_recent_replies: dict[tuple[int, str], float] = {}
+_DEDUP_WINDOW = 30.0
 
 
 class AutoEmbed(commands.Cog):
@@ -51,11 +51,12 @@ class AutoEmbed(commands.Cog):
 
         reply_text = " ".join(fixed)
 
-        last = _last_reply.get(message.channel.id)
-        if last and last[0] == reply_text and time.monotonic() - last[1] < _DEDUP_WINDOW:
+        now = time.monotonic()
+        key = (message.channel.id, reply_text)
+        if now - _recent_replies.get(key, 0) < _DEDUP_WINDOW:
             return
 
-        _last_reply[message.channel.id] = (reply_text, time.monotonic())
+        _recent_replies[key] = now
         await message.reply(reply_text, mention_author=False)
 
 
