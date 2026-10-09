@@ -7,7 +7,7 @@ from discord.ext import commands
 
 RULES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"https?://(?:www\.)?(?:twitter\.com|x\.com)/\S+", re.IGNORECASE), "fxtwitter.com"),
-    (re.compile(r"https?://(?:www\.)?instagram\.com/\S+", re.IGNORECASE), "ddinstagram.com"),
+    (re.compile(r"https?://(?:www\.)?instagram\.com/\S+", re.IGNORECASE), "kkinstagram.com"),
     (re.compile(r"https?://(?:www\.)?(?:tiktok\.com|vm\.tiktok\.com)/\S+", re.IGNORECASE), "vxtiktok.com"),
 ]
 
@@ -31,9 +31,11 @@ def _extract_fixed(content: str) -> list[str]:
     return fixed
 
 
-# channel_id -> (reply_text, timestamp) — expires after 5 seconds
-_last_reply: dict[int, tuple[str, float]] = {}
-_DEDUP_WINDOW = 5.0
+# message_id -> timestamp — prevents double-firing on the same message
+_processed: dict[int, float] = {}
+# (channel_id, reply_text) -> timestamp — prevents repeat replies for same URL
+_recent_replies: dict[tuple[int, str], float] = {}
+_DEDUP_WINDOW = 30.0
 
 
 class AutoEmbed(commands.Cog):
@@ -45,17 +47,28 @@ class AutoEmbed(commands.Cog):
         if message.author.bot or message.guild is None:
             return
 
+        now = time.monotonic()
+
+        if message.id in _processed:
+            return
+        _processed[message.id] = now
+
+        # evict entries older than 60s to keep memory bounded
+        cutoff = now - 60.0
+        for mid in [k for k, v in _processed.items() if v < cutoff]:
+            del _processed[mid]
+
         fixed = _extract_fixed(message.content)
         if not fixed:
             return
 
         reply_text = " ".join(fixed)
 
-        last = _last_reply.get(message.channel.id)
-        if last and last[0] == reply_text and time.monotonic() - last[1] < _DEDUP_WINDOW:
+        key = (message.channel.id, reply_text)
+        if now - _recent_replies.get(key, 0) < _DEDUP_WINDOW:
             return
 
-        _last_reply[message.channel.id] = (reply_text, time.monotonic())
+        _recent_replies[key] = now
         await message.reply(reply_text, mention_author=False)
 
 
