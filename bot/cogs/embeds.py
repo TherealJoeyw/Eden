@@ -7,7 +7,7 @@ from discord.ext import commands
 
 RULES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"https?://(?:www\.)?(?:twitter\.com|x\.com)/\S+", re.IGNORECASE), "fxtwitter.com"),
-    (re.compile(r"https?://(?:www\.)?instagram\.com/\S+", re.IGNORECASE), "ddinstagram.com"),
+    (re.compile(r"https?://(?:www\.)?instagram\.com/\S+", re.IGNORECASE), "kkinstagram.com"),
     (re.compile(r"https?://(?:www\.)?(?:tiktok\.com|vm\.tiktok\.com)/\S+", re.IGNORECASE), "vxtiktok.com"),
 ]
 
