@@ -31,7 +31,9 @@ def _extract_fixed(content: str) -> list[str]:
     return fixed
 
 
-# (channel_id, reply_text) -> timestamp — expires after 30 seconds
+# message_id -> timestamp — prevents double-firing on the same message
+_processed: dict[int, float] = {}
+# (channel_id, reply_text) -> timestamp — prevents repeat replies for same URL
 _recent_replies: dict[tuple[int, str], float] = {}
 _DEDUP_WINDOW = 30.0
 
@@ -45,13 +47,23 @@ class AutoEmbed(commands.Cog):
         if message.author.bot or message.guild is None:
             return
 
+        now = time.monotonic()
+
+        if message.id in _processed:
+            return
+        _processed[message.id] = now
+
+        # evict entries older than 60s to keep memory bounded
+        cutoff = now - 60.0
+        for mid in [k for k, v in _processed.items() if v < cutoff]:
+            del _processed[mid]
+
         fixed = _extract_fixed(message.content)
         if not fixed:
             return
 
         reply_text = " ".join(fixed)
 
-        now = time.monotonic()
         key = (message.channel.id, reply_text)
         if now - _recent_replies.get(key, 0) < _DEDUP_WINDOW:
             return
